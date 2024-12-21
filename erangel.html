@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Secret Basements Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: black;
+        }
+        .map-container {
+            position: relative;
+            display: inline-block;
+            padding-bottom: 90px; /* Adds padding to prevent hover-induced enlargement */
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .hover-circle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 0, 0, 0.7);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            background: transparent; /* Ensure transparent background */
+            animation: pulse 2s infinite;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(255, 0, 0, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+            }
+        }
+        
+        .hover-circle.focused {
+            border-color: rgb(255, 0, 0);
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.5);
+            background: transparent; /* Ensure transparent background when focused */
+        }
+        
+        area {
+            cursor: pointer;
+        }
+        
+        .location-number {
+            position: absolute;
+            top: 80px !important; /* Adjust the value to raise the element */
+            left: 50%; 
+            transform: translate(-50%, -50%); /* Keeps it centered while moving it up */
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 600;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9);
+            white-space: nowrap;
+            transition: all 0.3s ease-in-out;
+            padding: 4px 12px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        // Here are several style options for the location number: as I dont like the way its shown by default
+
+        // Option 1: Bold with Glowing Effect
+        .location-number-glow {
+            position: absolute;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            text-shadow: 
+                0 0 5px rgba(255, 255, 255, 0.8),
+                0 0 10px rgba(255, 255, 255, 0.5),
+                0 0 15px rgba(255, 255, 255, 0.3),
+                2px 2px 2px rgba(0, 0, 0, 0.7);
+            white-space: nowrap;
+            transition: all 0.3s ease-in-out;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        // Option 2: Floating Label with Border
+        .location-number-floating {
+            position: absolute;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 600;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9);
+            white-space: nowrap;
+            transition: all 0.3s ease-in-out;
+            padding: 4px 12px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        // Option 3: Modern Pill Style
+        .location-number-pill {
+            position: absolute;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 500;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            white-space: nowrap;
+            transition: all 0.3s ease-in-out;
+            padding: 6px 15px;
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.8), rgba(128, 0, 0, 0.9));
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        // Option 4: Military Style Tag
+        .location-number-military {
+            position: absolute;
+            color: #00ff00;
+            font-size: 18px;
+            font-family: "Courier New", monospace;
+            font-weight: bold;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            white-space: nowrap;
+            transition: all 0.3s ease-in-out;
+            padding: 4px 10px;
+            border: 1px solid #00ff00;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            text-transform: uppercase;
+        }
+
+
+        /* Remove any background from hover states */
+        area:hover {
+            background: transparent;
+        }
+
+        .info-card {
+            position: absolute;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: white;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .info-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .info-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+        }
+
+        .info-card p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="map-container">
+        <img src="erangel.png" alt="Game Map" usemap="#gamemap">
+        <map name="gamemap">
+            <area shape="circle" coords="187,235,60" href="basement1.html" alt="Secret Basement 1" 
+                data-location="Secret Basement 1"
+                data-description="An abandoned military bunker containing valuable supplies and ancient artifacts."
+                data-image="basement1.png">
+            
+            <area shape="circle" coords="352,287,60" href="basement2.html" alt="Secret Basement 2"
+                data-location="Secret Basement 2"
+                data-description="A hidden underground laboratory with experimental technology and classified documents."
+                data-image="basement2.png">
+            
+            <area shape="circle" coords="558,254,60" href="basement3.html" alt="Secret Basement 3"
+                data-location="Secret Basement 3"
+                data-description="Melliey BDSM Basement She bakes fresh Bread, Donuts, Sweets and Meat Pies in this location. She also rents this location out as a Airbnb BDSM Dungeon at the weekends."
+                data-image="basement3.png">
+            
+            <area shape="circle" coords="690,81,60" href="basement4.html" alt="Secret Basement 4"
+                data-location="Secret Basement 4"
+                data-description="An underground storage facility housing military-grade weapons and tactical gear."
+                data-image="basement4.png">
+            
+            <area shape="circle" coords="880,273,60" href="basement5.html" alt="Secret Basement 5"
+                data-location="Secret Basement 5"
+                data-description="A secret command center with surveillance equipment and communication systems."
+                data-image="basement5.png">
+            
+            <area shape="circle" coords="736,454,60" href="basement6.html" alt="Secret Basement 6"
+                data-location="Secret Basement 6"
+                data-description="A hidden armory filled with rare weapons and experimental prototypes."
+                data-image="basement6.png">
+            
+            <area shape="circle" coords="911,651,60" href="basement7.html" alt="Secret Basement 7"
+                data-location="Secret Basement 7"
+                data-description="An underground medical facility with advanced treatment equipment and supplies."
+                data-image="basement7.png">
+            
+            <area shape="circle" coords="765,899,60" href="basement8.html" alt="Secret Basement 8"
+                data-location="Secret Basement 8"
+                data-description="Askarelo's Lady boy Club pumping out the music and baby lotion till the early hours."
+                data-image="basement8.png">
+            
+            <area shape="circle" coords="593,790,60" href="basement9.html" alt="Secret Basement 9"
+                data-location="Secret Basement 9"
+                data-description="A hidden submarine dock with underwater access and emergency supplies."
+                data-image="basement9.png">
+            
+            <area shape="circle" coords="445,897,60" href="basement10.html" alt="Secret Basement 10"
+                data-location="Secret Basement 10"
+                data-description="Confetti Cakes screet hurb growing facility where she grows her herbs for ``Cooking``."
+                data-image="basement10.png">
+            
+            <area shape="circle" coords="369,686,60" href="basement11.html" alt="Secret Basement 11"
+                data-location="Secret Basement 11"
+                data-description="A covert intelligence center with cryptography equipment and classified files."
+                data-image="basement11.png">
+            
+            <area shape="circle" coords="170,740,60" href="basement12.html" alt="Secret Basement 12"
+                data-location="Secret Basement 12"
+                data-description="A hidden training facility with combat simulators and practice ranges."
+                data-image="basement12.png">
+            
+            <area shape="circle" coords="200,469,60" href="basement13.html" alt="Secret Basement 13"
+                data-location="Secret Basement 13"
+                data-description="An underground vault containing valuable artifacts and historical documents."
+                data-image="basement13.png">
+            
+            <area shape="circle" coords="404,500,60" href="basement14.html" alt="Secret Basement 14"
+                data-location="Secret Basement 14"
+                data-description="A secret communications hub with advanced radio equipment and satellite links."
+                data-image="basement14.png">
+            
+            <area shape="circle" coords="630,590,60" href="basement15.html" alt="Secret Basement 15"
+                data-location="Secret Basement 15"
+                data-description="A hidden power station providing emergency power to critical facilities."
+                data-image="basement15.png">
+        </map>
+        <div class="hover-circle"></div>
+        <div class="location-number"></div>
+        <div class="info-card"></div>
+    </div>
+
+    <script>
+       
+       document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.map-container');
+    const hoverCircle = document.querySelector('.hover-circle');
+    const locationNumber = document.querySelector('.location-number');
+    const infoCard = document.querySelector('.info-card');
+    const areas = Array.from(document.querySelectorAll('area'));
+    let currentFocusIndex = -1;
+
+    function showLocation(area, isFocused = false) {
+        const coords = area.coords.split(',');
+        const x = parseInt(coords[0]);
+        const y = parseInt(coords[1]);
+        
+        // Show hover circle and location number
+        hoverCircle.style.left = x + 'px';
+        hoverCircle.style.top = y + 'px';
+        hoverCircle.style.display = 'block';
+        hoverCircle.classList.toggle('focused', isFocused);
+        
+        locationNumber.style.left = x + 'px';
+        locationNumber.style.top = (y - 25) + 'px';
+        locationNumber.textContent = area.getAttribute('data-location');
+        locationNumber.style.display = 'block';
+
+        // Show info card
+        const description = area.getAttribute('data-description');
+        const imagePath = area.getAttribute('data-image');
+        const locationName = area.getAttribute('data-location');
+
+        infoCard.innerHTML = `
+            <img src="${imagePath}" alt="${locationName}">
+            <h3>${locationName}</h3>
+            <p>${description}</p>
+        `;
+
+ // Enhanced info card positioning
+ let cardX = x + 40;
+    let cardY = y;
+
+    // Get the text content under the potential card position
+    const elements = document.elementsFromPoint(cardX, cardY);
+    const hasImportantText = elements.some(el => 
+        el.tagName === 'TEXT' || 
+        el.classList.contains('location-name') || 
+        el.classList.contains('map-label')
+    );
+
+    // If card would cover text, try positioning it on the other side
+    if (hasImportantText) {
+        cardX = x - 340; // card width (300px) + padding
+    }
+
+    // If still problematic, position above or below
+    if (cardX < 0 || hasImportantText) {
+        cardX = x - 150; // Center horizontally
+        cardY = y + 100; // Position below
+    }
+
+    infoCard.style.left = cardX + 'px';
+    infoCard.style.top = cardY + 'px';
+    infoCard.classList.add('visible');
+    }
+
+    function hideLocation() {
+        hoverCircle.style.display = 'none';
+        locationNumber.style.display = 'none';
+        hoverCircle.classList.remove('focused');
+        infoCard.classList.remove('visible');
+    }
+
+    // Mobile touch support
+    function initTouchSupport() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        container.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        container.addEventListener('touchend', function(e) {
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            // If it's a tap (not a scroll)
+            if (Math.abs(touchEndX - touchStartX) < 10 && Math.abs(touchEndY - touchStartY) < 10) {
+                const rect = container.getBoundingClientRect();
+                const x = touchEndX - rect.left;
+                const y = touchEndY - rect.top;
+                
+                // Find the closest area to the touch point
+                let closest = null;
+                let closestDist = Infinity;
+                
+                areas.forEach(area => {
+                    const coords = area.coords.split(',');
+                    const areaX = parseInt(coords[0]);
+                    const areaY = parseInt(coords[1]);
+                    const dist = Math.hypot(x - areaX, y - areaY);
+                    
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closest = area;
+                    }
+                });
+                
+                if (closest && closestDist < 30) {
+                    showLocation(closest);
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
+    // Keyboard navigation
+    function initKeyboardNav() {
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case 'ArrowRight':
+                    navigateLocations(1);
+                    break;
+                case 'ArrowLeft':
+                    navigateLocations(-1);
+                    break;
+                case 'Enter':
+                    if (currentFocusIndex >= 0) {
+                        areas[currentFocusIndex].click();
+                    }
+                    break;
+            }
+        });
+    }
+
+    function navigateLocations(direction) {
+        currentFocusIndex = (currentFocusIndex + direction + areas.length) % areas.length;
+        const area = areas[currentFocusIndex];
+        showLocation(area, true);
+    }
+
+    // Initialize event listeners
+    areas.forEach(area => {
+        area.addEventListener('mouseover', () => showLocation(area));
+        area.addEventListener('mouseout', hideLocation);
+        area.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Clicked:', this.getAttribute('data-location'));
+        });
+    });
+
+    // Initialize touch and keyboard support
+    initTouchSupport();
+    initKeyboardNav();
+});
+    </script>
+</body>
+</html>
